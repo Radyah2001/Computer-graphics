@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texture Wrapping and Filtering Modes in WebGL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 2em;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #0056b3;
+        }
+        h1 {
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 0.3em;
+        }
+        section {
+            margin-bottom: 2em;
+        }
+        code {
+            background-color: #eaeaea;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+        }
+        ul {
+            margin: 1em 0;
+            padding-left: 1.5em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Texture Wrapping and Filtering Modes in WebGL</h1>
+
+    <section>
+        <h2>1. Texture Wrapping Modes</h2>
+
+        <p>Texture wrapping determines how a texture behaves when texture coordinates go outside the range <code>[0,1]</code>.</p>
+
+        <h3>Repeat (<code>gl.REPEAT</code>)</h3>
+        <p>The texture image is repeated when the coordinates exceed the range <code>[0,1]</code>. This is useful for creating a continuous, tiled texture on a surface.</p>
+
+        <h3>Clamp to Edge (<code>gl.CLAMP_TO_EDGE</code>)</h3>
+        <p>Instead of repeating, the edge pixels of the texture are stretched to cover the area outside <code>[0,1]</code>. This mode avoids seams and is ideal for stopping the texture at the geometry’s edges.</p>
+    </section>
+
+    <section>
+        <h2>2. Texture Filtering Modes</h2>
+
+        <p>Texture filtering affects how textures are sampled when scaled (either magnified or minified).</p>
+
+        <h3>Nearest (<code>gl.NEAREST</code>)</h3>
+        <p>Uses the closest texel to the pixel being rendered. This produces a pixelated effect, ideal for low-resolution or pixel-art textures.</p>
+
+        <h3>Linear (<code>gl.LINEAR</code>)</h3>
+        <p>Averages the nearest texels for a smoother result, reducing blockiness during magnification but can cause slight blurriness.</p>
+
+        <h3>Nearest Mipmap Nearest (<code>gl.NEAREST_MIPMAP_NEAREST</code>)</h3>
+        <p>Selects the nearest mipmap level and applies <code>NEAREST</code> filtering. This is efficient for minimizing texture at different distances.</p>
+
+        <h3>Linear Mipmap Nearest (<code>gl.LINEAR_MIPMAP_NEAREST</code>)</h3>
+        <p>Selects the nearest mipmap level and applies <code>LINEAR</code> filtering. This produces smoother transitions compared to <code>NEAREST_MIPMAP_NEAREST</code>.</p>
+
+        <h3>Nearest Mipmap Linear (<code>gl.NEAREST_MIPMAP_LINEAR</code>)</h3>
+        <p>Interpolates between two mipmap levels and applies <code>NEAREST</code> filtering within each level, achieving smoother minification while retaining sharpness.</p>
+
+        <h3>Linear Mipmap Linear (<code>gl.LINEAR_MIPMAP_LINEAR</code>)</h3>
+        <p>Interpolates between two mipmap levels and applies <code>LINEAR</code> filtering for the smoothest transitions during minification.</p>
+    </section>
+
+    <section>
+        <h2>3. Influence on Magnification and Minification</h2>
+
+        <h3>Magnification</h3>
+        <p>When the texture is magnified (stretched), filtering modes affect how the texture pixels are interpolated:</p>
+        <ul>
+            <li><strong>Nearest Filtering:</strong> Produces a sharp, pixelated look.</li>
+            <li><strong>Linear Filtering:</strong> Results in a smoother, softer image.</li>
+        </ul>
+
+        <h3>Minification</h3>
+        <p>When the texture is minified (reduced), mipmapping is essential to avoid aliasing and noise:</p>
+        <ul>
+            <li><strong>Without Mipmaps:</strong> Small objects use the full-resolution texture, causing visual noise.</li>
+            <li><strong>With Mipmaps:</strong> Smaller versions of the texture are used, and filtering modes interpolate smoothly between them.</li>
+        </ul>
+    </section>
+
+</body>
+</html>

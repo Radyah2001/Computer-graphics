@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>w02p02</title>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="w02p02.js"></script>
+</head>
+<body>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+
+    <!-- Clear Button -->
+    <button id="clear-btn">Clear Canvas</button>
+
+    <!-- Canvas Color Picker -->
+    <label for="clear-color">Select Canvas Clear Color:</label>
+    <input type="color" id="clear-color" value="#6495ED"> <!-- Default is cornflower blue -->
+
+    <!-- Point Color Picker -->
+    <label for="point-color">Select Point Color:</label>
+    <input type="color" id="point-color" value="#FF0000"> <!-- Default is red -->
+
+    <!-- Vertex Shader -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec4 vPosition;
+        attribute vec4 vColor;
+        varying vec4 fColor;
+
+        void main() {
+            gl_Position = vPosition;
+            fColor = vColor;  // Pass the color to the fragment shader
+            gl_PointSize = 10.0;
+        }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+        varying vec4 fColor;
+
+        void main() {
+            gl_FragColor = fColor;
+        }
+    </script>
+</body>
+</html>

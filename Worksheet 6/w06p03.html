@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>w06p03</title>
+    <script src="Common/webgl-utils.js"></script>
+    <script src="Common/initShaders.js"></script>
+    <script src="Common/MV.js"></script>
+    <script src="w06p03.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            margin: 2em;
+        }
+
+        canvas {
+            display: block;
+            margin: 1em auto;
+            border: 1px solid #ccc;
+            background-color: #fff;
+        }
+
+        button {
+            padding: 0.5em 1em;
+            font-size: 1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+
+    <button id="toggleOrbit">Toggle Orbit</button>
+
+    <!-- Vertex Shader -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        const vec4 lightPosition = vec4(0, 0, -1, 0);
+        const vec4 lightEmission = vec4(1, 1, 1, 0);
+        const float visibility = 1.0;
+
+        const vec4 incidentLight = visibility * lightEmission;
+        const float diffuseReflectionCoeff = 1.0;
+
+        uniform mat4 P;
+        uniform mat4 V;
+
+        attribute mat4 M;
+        attribute vec4 position;
+
+        varying vec4 vertexColor;
+        varying vec4 fragmentPosition;
+
+        void main() {
+            vec4 worldPosition = M * position;
+
+            vec3 w_i = lightPosition.w == 0.0 ? normalize(-lightPosition.xyz) : normalize(lightPosition.xyz - worldPosition.xyz);
+            vec3 normal = normalize(worldPosition.xyz);
+
+            vec3 diffuse = diffuseReflectionCoeff * incidentLight.xyz * max(dot(normal, w_i), 0.0);
+            vertexColor = vec4(0.5, 0.5, 0.5, 1.0) * (0.5 + vec4(diffuse, 1.0));
+
+            fragmentPosition = position;
+            gl_Position = P * V * worldPosition;
+        }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        #define PI 3.1415926538
+
+        precision mediump float;
+
+        uniform sampler2D textureMap;
+        varying vec4 vertexColor;
+        varying vec4 fragmentPosition;
+
+        void main() {
+            vec3 normal = normalize(fragmentPosition.xyz);
+            vec2 fragmentTextureCoord = vec2(
+                1.0 - atan(normal.z, normal.x) / (2.0 * PI),
+                acos(normal.y) / PI
+            );
+
+            gl_FragColor = vertexColor * texture2D(textureMap, fragmentTextureCoord);
+        }
+    </script>
+</body>
+</html>

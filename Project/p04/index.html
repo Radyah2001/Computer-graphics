@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>p04</title>
+    <!-- External Scripts -->
+    <script src="../Common/webgl-utils.js"></script>
+    <script src="../Common/initShaders.js"></script>
+    <script src="../Common/MV.js"></script>
+    <script src="../OBJParser.js"></script>
+    <script src="source.js"></script>
+    
+    <!-- Stylesheet -->
+    <style>
+        /* Reset some default styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2em;
+            color: #444;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        fieldset {
+            width: 100%;
+            max-width: 600px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        legend {
+            padding: 0 10px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+        }
+
+        th {
+            background-color: #f7f7f7;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            appearance: none;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, input[type="range"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container span {
+            min-width: 40px;
+            text-align: right;
+            font-weight: bold;
+            color: #555;
+        }
+
+        @media (max-width: 600px) {
+            th, td {
+                padding: 8px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>part 4</h1>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+
+    <!-- Controls Fieldset -->
+    <fieldset>
+        <legend>Controls</legend>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Value</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Bouncing</td>
+                    <td><span id="bouncingValue">True</span></td>
+                    <td><button id="toggleBounce">Toggle</button></td>
+                </tr>
+                <tr>
+                    <td>Orbiting</td>
+                    <td><span id="orbitingValue">True</span></td>
+                    <td><button id="toggleOrbit">Toggle</button></td>
+                </tr>
+                <tr>
+                    <td>Viewpoint</td>
+                    <td colspan="2">
+                        <select name="viewPointSelect" id="viewPointSelect" aria-label="Select Viewpoint">
+                            <option value="0" selected>Static</option>
+                            <option value="1">Orbiting</option>
+                            <option value="2">Orbiting From Light Source</option>
+                        </select>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </fieldset>
+
+    <!-- Lighting Model Parameters Fieldset -->
+    <fieldset>
+        <legend>Lighting Model Parameters</legend>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                    <th>Control</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><label for="lightEmissionSlider">Emission</label></td>
+                    <td><span id="lightEmissionSliderValue">1.00</span></td>
+                    <td>
+                        <input type="range" id="lightEmissionSlider" min="0" max="2" value="1" step="0.01" aria-label="Emission Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="ambientKSlider">Ambient</label></td>
+                    <td><span id="ambientKSliderValue">0.50</span></td>
+                    <td>
+                        <input type="range" id="ambientKSlider" min="0" max="1" value="0.5" step="0.01" aria-label="Ambient Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="diffuseKSlider">Diffuse</label></td>
+                    <td><span id="diffuseKSliderValue">0.50</span></td>
+                    <td>
+                        <input type="range" id="diffuseKSlider" min="0" max="1" value="0.5" step="0.01" aria-label="Diffuse Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="specularKSlider">Specular</label></td>
+                    <td><span id="specularKSliderValue">0.50</span></td>
+                    <td>
+                        <input type="range" id="specularKSlider" min="0" max="1" value="0.5" step="0.01" aria-label="Specular Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="shininessSlider">Shininess</label></td>
+                    <td><span id="shininessSliderValue">100</span></td>
+                    <td>
+                        <input type="range" id="shininessSlider" min="0" max="200" value="100" step="1" aria-label="Shininess Slider">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </fieldset>
+    <script id="vertex-shader-ground" type="x-shader/x-vertex">
+        // Uniforms
+        uniform mat4 P;          // Projection matrix
+        uniform mat4 V;          // View matrix
+        uniform mat4 lightV;     // Light's View matrix (used for shadow mapping)
+        uniform mat4 M;          // Model matrix (transforms object from model space to world space)
+        
+        // Attributes
+        attribute vec4 vertexPosition;      // Vertex position in model space
+        attribute vec2 vertexTextureCoord;  // Vertex texture coordinates
+    
+        // Varyings
+        varying vec4 fragmentNDC;           // Fragment position in Normalized Device Coordinates (NDC) for shadow mapping
+        varying vec2 fragmentTextureCoord;  // Interpolated texture coordinates passed to the fragment shader
+    
+        void main() {
+            // Pass the texture coordinates to the fragment shader
+            fragmentTextureCoord = vertexTextureCoord;
+            
+            // Calculate fragment position in NDC for shadow mapping
+            fragmentNDC = P * lightV * M * vertexPosition;
+            
+            // Calculate the final position of the vertex in clip space
+            gl_Position = P * V * M * vertexPosition;
+        }
+    </script>
+    
+    <script id="fragment-shader-ground" type="x-shader/x-fragment">
+        precision mediump float;  // Sets the default precision to medium for floating-point operations
+
+        // Uniforms
+        uniform sampler2D textureMap;  // Texture sampler for ground texture
+        uniform sampler2D shadowMap;   // Texture sampler for shadow map
+    
+        uniform int renderDepth;       // Flag to determine if the shader should render depth or color
+    
+        // Varyings
+        varying vec4 fragmentNDC;           // Fragment position in NDC for shadow mapping
+        varying vec2 fragmentTextureCoord;  // Interpolated texture coordinates from the vertex shader
+    
+        // Function to Unpack Depth from RGBA
+        float unpackDepth(const in vec4 rgbaDepth) {
+            // Converts RGBA depth back to a single float value
+            const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));
+            return dot(rgbaDepth, bitShift);
+        }
+    
+        void main() {
+            // Depth Rendering Pass
+            if (renderDepth == 1) {
+                // Encode depth into RGBA channels
+                const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);
+                const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);
+                
+                // Calculate fractional depth
+                vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);
+                
+                // Subtract fractional parts to prevent overlap
+                rgbaDepth -= rgbaDepth.gbaa * bitMask;
+                
+                // Output the encoded depth
+                gl_FragColor = rgbaDepth;
+            } 
+            // Color Rendering Pass
+            else {
+                // Calculate shadow coordinates in light's NDC space
+                vec3 shadowCoord = 0.5 * fragmentNDC.xyz / fragmentNDC.w + 0.5;
+    
+                // Sample the depth from the shadow map
+                vec4 rgbaDepth = texture2D(shadowMap, shadowCoord.xy);
+                float depth = unpackDepth(rgbaDepth);
+                
+                // Sample the ground texture
+                vec4 color = texture2D(textureMap, fragmentTextureCoord);
+    
+                // **Shadow Check**
+                if (shadowCoord.z > depth + 0.0015) {
+                    // If the fragment is in shadow, dim its color
+                    color.rgb *= 0.5;
+                }
+                
+                // Set the alpha to 0.5 for semi-transparency (optional)
+                color.a = 0.5;
+                
+                // Output the final color
+                gl_FragColor = color;
+            }
+        }
+    </script>
+    
+    <script id="vertex-shader-teapot" type="x-shader/x-vertex">
+        // **Uniforms**
+        uniform float emissionL;       // Emission intensity
+        uniform float ambientK;        // Ambient reflection coefficient
+        uniform float diffuseK;        // Diffuse reflection coefficient
+        uniform float specularK;       // Specular reflection coefficient
+        uniform float shininess;       // Shininess factor for specular highlights
+    
+        uniform vec4 lightPosition;    // Position of the light source in world space
+        
+        uniform mat4 P;                // Projection matrix
+        uniform mat4 V;                // View matrix
+        uniform mat4 lightV;           // Light's View matrix (for shadow mapping)
+        uniform mat4 M;                // Model matrix (transforms object from model space to world space)
+        uniform mat4 R;                // Reflection matrix (used for mirror effects)
+    
+        uniform int reflection;        // Flag to determine if reflection is active
+        
+        // **Attributes**
+        attribute vec4 vertexPosition; // Vertex position in model space
+        attribute vec4 vertexColor;    // Vertex color
+        attribute vec4 vertexNormal;   // Vertex normal
+    
+        // **Varyings**
+        varying vec4 fragmentNDC;          // Fragment position in Normalized Device Coordinates for shadow mapping
+        varying vec4 fragmentColor;        // Interpolated vertex color passed to the fragment shader
+        varying vec3 fragmentNormal;       // Transformed normal vector passed to the fragment shader
+    
+        varying vec3 w_i;    // Incoming light vector
+        varying vec3 w_o;    // Outgoing view vector
+        varying vec3 w_r;    // Reflection vector
+    
+        void main() {
+            // **Transform Vertex Position to Eye Space**
+            vec4 eyeSpacePosition = V * R * M * vertexPosition;
+            
+            // **Transform Light Position to Eye Space**
+            vec4 eyeSpaceLightPosition = V * R * lightPosition;
+            
+            // **Transform and Normalize the Normal Vector**
+            // Note: Using mat3(V) * mat3(R) * vertexNormal.xyz is a simplistic approach.
+            // For accurate normal transformation, consider using the inverse transpose of the model-view matrix.
+            vec3 eyeSpaceNormal = mat3(V) * mat3(R) * vertexNormal.xyz;
+    
+            // **Calculate Lighting Vectors**
+            // Determine if the light is directional or positional based on the w component
+            // If w == 0.0, it's a directional light; otherwise, it's a positional light
+            w_i = eyeSpaceLightPosition.w == 0.0 
+                  ? normalize(-eyeSpaceLightPosition.xyz) 
+                  : normalize(eyeSpaceLightPosition.xyz - eyeSpacePosition.xyz);
+            
+            // Outgoing view vector points from the fragment to the camera
+            w_o = normalize(-eyeSpacePosition.xyz);
+            
+            // Reflection vector is the reflection of the incoming light vector around the normal
+            w_r = normalize(reflect(-w_i, eyeSpaceNormal.xyz));
+    
+            // **Pass the Transformed Normal to the Fragment Shader**
+            fragmentNormal = eyeSpaceNormal.xyz;
+    
+            // **Calculate Fragment Position in NDC for Shadow Mapping**
+            fragmentNDC = P * lightV * M * vertexPosition;
+            
+            // **Pass Vertex Color to the Fragment Shader**
+            fragmentColor = vertexColor;
+            
+            // **Set the Final Position of the Vertex in Clip Space**
+            gl_Position = P * eyeSpacePosition;
+        }
+    </script>
+    
+    <script id="fragment-shader-teapot" type="x-shader/x-fragment">
+        precision highp float;  // Set the default precision to high for floating-point operations
+
+        // **Lighting Model Uniforms**
+        uniform float emissionL;    // Emission intensity: controls the brightness of emitted light
+        uniform float ambientK;     // Ambient reflection coefficient: controls the ambient light contribution
+        uniform float diffuseK;     // Diffuse reflection coefficient: controls the diffuse light contribution
+        uniform float specularK;    // Specular reflection coefficient: controls the specular light contribution
+        uniform float shininess;    // Shininess factor: controls the size and sharpness of specular highlights
+        
+        uniform int renderDepth;    // Flag to determine shader mode: 1 for depth rendering, 0 for color rendering
+        
+        uniform sampler2D shadowMap; // Shadow map texture: contains depth information from the light's perspective
+        
+        // **Varying Variables from Vertex Shader**
+        varying vec3 w_i;             // Incoming light vector: direction from the fragment to the light source
+        varying vec3 fragmentNormal;  // Transformed normal vector at the fragment
+        varying vec3 w_o;             // Outgoing view vector: direction from the fragment to the camera
+        varying vec3 w_r;             // Reflection vector: reflection of the incoming light vector around the normal
+        
+        varying vec4 fragmentNDC;     // Fragment position in Normalized Device Coordinates (NDC) for shadow mapping
+        varying vec4 fragmentColor;   // Interpolated vertex color passed from the vertex shader
+        
+        // **Function to Unpack Depth from RGBA**
+        // Converts the RGBA-encoded depth value back into a single floating-point depth value
+        float unpackDepth(const in vec4 rgbaDepth) {
+            // Each component of rgbaDepth represents a part of the depth value
+            const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));
+            return dot(rgbaDepth, bitShift);
+        }
+        
+        void main() {
+            // **Depth Rendering Pass**
+            // If renderDepth is set to 1, the shader outputs the depth value for shadow mapping
+            if (renderDepth == 1) {
+                // Encode the fragment's depth into RGBA channels
+                const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);
+                const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);
+                
+                // Calculate the fractional part of the depth multiplied by bitShift
+                vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);
+                
+                // Subtract the fractional parts to prevent overlap in higher bits
+                rgbaDepth -= rgbaDepth.gbaa * bitMask;
+                
+                // Output the encoded depth value
+                gl_FragColor = rgbaDepth;
+                return; // Exit the shader as depth rendering is complete
+            }
+        
+            // **Color Rendering Pass**
+            // If renderDepth is not set, perform lighting and shadow calculations
+            
+            // **Calculate Light Emission**
+            // Define the color and intensity of the light source
+            vec3 lightEmission = vec3(1.0) * emissionL; // White light scaled by emissionL
+            
+            // **Normalize Vectors**
+            // Ensure all direction vectors are unit vectors for accurate lighting calculations
+            vec3 normal_n = normalize(fragmentNormal); // Normal vector at the fragment
+            vec3 w_i_n = normalize(w_i);              // Incoming light direction
+            vec3 w_o_n = normalize(w_o);              // Outgoing view (camera) direction
+            vec3 w_r_n = normalize(w_r);              // Reflection direction
+            
+            // **Diffuse Lighting Component**
+            // Calculate the diffuse light based on the angle between the light and the normal
+            float diff = max(dot(normal_n, w_i_n), 0.0); // Lambertian reflectance
+            vec3 diffuse = diffuseK * lightEmission * diff;
+            
+            // **Specular Lighting Component**
+            // Calculate the specular highlight based on the reflection vector and view direction
+            float spec = pow(max(dot(w_r_n, w_o_n), 0.0), shininess); // Blinn-Phong specular
+            vec3 specular = specularK * lightEmission * spec;
+            
+            // **Ambient Lighting Component**
+            // Add a base level of light that affects all objects equally
+            vec3 ambient = ambientK * lightEmission;
+            
+            // **Shadow Calculation**
+            // Determine if the fragment is in shadow by comparing its depth with the shadow map
+            vec3 shadowCoord = 0.5 * fragmentNDC.xyz / fragmentNDC.w + 0.5; // Transform to [0,1] range
+            vec4 rgbaDepth = texture2D(shadowMap, shadowCoord.xy);            // Sample the shadow map
+            float depth = unpackDepth(rgbaDepth);                             // Unpack the sampled depth
+            
+            // **Shadow Bias**
+            // A small bias to prevent shadow acne (self-shadowing artifacts)
+            float bias = 0.005; // Adjust this value based on visual results
+            
+            // **Determine Visibility Based on Shadow Comparison**
+            // If the fragment's depth is greater than the shadow map depth plus bias, it's in shadow
+            float visibility = 1.0; // Fully lit by default
+            if (shadowCoord.z > depth + bias) {
+                visibility = 0.5; // Reduced lighting if in shadow
+            }
+            
+            // **Combine Lighting Components with Visibility**
+            // Apply visibility to the diffuse component to simulate shadows
+            // Specular and ambient components remain unaffected for realism
+            vec3 lighting = (diffuse * visibility) + specular + ambient;
+            
+            // **Apply Lighting to the Fragment Color**
+            // Modulate the interpolated vertex color with the calculated lighting
+            vec4 fc = fragmentColor;
+            fc.rgb *= lighting;
+            
+            // **Output the Final Color**
+            gl_FragColor = fc;
+        }
+    </script>
+</body>
+</html>

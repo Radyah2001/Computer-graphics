@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>w04p05</title>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="OBJParser.js"></script>
+</head>
+<canvas id="gl-canvas" width="512" height="512">
+    Your browser doesn't support the HTML5 canvas element.
+</canvas>
+    <!-- Vertex Shader -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        uniform mat4 u_Projection;
+        uniform mat4 u_View;
+        uniform mat4 u_Model;
+        
+        attribute vec4 a_Position;
+        attribute vec4 a_Normal;
+        
+        varying vec3 v_Normal;
+        varying vec3 v_Position;
+        
+        void main() {
+            gl_Position = u_Projection * u_View * u_Model * a_Position;
+            v_Position = vec3(u_Model * a_Position);
+            v_Normal = mat3(u_Model) * vec3(a_Normal);
+        }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec3 v_Normal;
+        varying vec3 v_Position;
+
+        uniform vec3 u_LightDirection;
+        uniform float uKd;
+        uniform float uKs;
+        uniform float uShininess;
+        uniform float uLe;
+        uniform float uLa;
+    
+        void main() {
+            vec3 N = normalize(v_Normal);
+            vec3 L = normalize(-u_LightDirection);
+            vec3 V = normalize(-v_Position);
+            vec3 R = reflect(-L, N);
+    
+            // Diffuse component
+            float diffuse = max(dot(N, L), 0.0);
+    
+            // Specular component
+            float specular = pow(max(dot(R, V), 0.0), uShininess);
+    
+            // Ambient component
+            vec3 ambient = uLa * vec3(1.0, 1.0, 1.0);
+    
+            // Final color calculation
+            vec3 color = uLe * (uKd * diffuse + uKs * specular) + ambient;
+            gl_FragColor = vec4(color, 1.0);
+        }
+    </script>
+    <script type="text/javascript" src="w05p04.js"></script>
+</body>
+</html>

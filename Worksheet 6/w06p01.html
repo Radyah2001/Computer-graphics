@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>w06p01</title>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="w06p01.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 2em;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto 2em;
+            border: 1px solid #ccc;
+            background-color: #fff;
+        }
+
+        fieldset {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 1em;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        legend {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.5em;
+            text-align: left;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.3em;
+            font-size: 1em;
+        }
+
+        label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+    <!-- Vertex Shader -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        uniform mat4 P;
+        uniform mat4 V;
+        
+        attribute vec4 vertexPosition;
+        attribute vec2 vertexTextureCoord;
+
+        varying vec2 fragmentTextureCoord;
+
+        void main() {
+            fragmentTextureCoord = vertexTextureCoord;
+
+            gl_Position = P * V * vertexPosition;
+        }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform sampler2D textureMap;
+
+        varying vec2 fragmentTextureCoord;
+
+        void main() {
+            gl_FragColor = texture2D(textureMap, fragmentTextureCoord);
+        }
+    </script>
+</body>
+</html>

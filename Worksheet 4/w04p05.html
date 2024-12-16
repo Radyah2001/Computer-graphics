@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>w04p05</title>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="w04p05.js"></script>
+</head>
+<body>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+    <!-- Vertex Shader -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec4 vPosition;
+        attribute vec3 vNormal;
+        uniform mat4 uModelViewProjectionMatrix;
+        uniform mat4 uModelViewMatrix;
+        varying vec3 fPosition;
+        varying vec3 fNormal;
+
+        void main() {
+            gl_Position = uModelViewProjectionMatrix * vPosition;
+            fPosition = (uModelViewMatrix * vPosition).xyz;
+            fNormal = normalize(mat3(uModelViewMatrix) * vNormal);
+        }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform vec3 uLightDirection;
+        uniform float uKd;
+        uniform float uKs;
+        uniform float uShininess;
+        uniform float uLe;
+        uniform float uLa;
+    
+        varying vec3 fPosition;
+        varying vec3 fNormal;
+    
+        void main() {
+            vec3 N = normalize(fNormal);
+            vec3 L = normalize(-uLightDirection);
+            vec3 V = normalize(-fPosition);
+            vec3 R = reflect(-L, N);
+    
+            float diffuse = max(dot(N, L), 0.0);
+            float specular = pow(max(dot(R, V), 0.0), uShininess);
+    
+            vec3 ambient = uLa * vec3(1.0, 1.0, 1.0);
+    
+            // Generate rainbow color based on normal vector
+            vec3 rainbowColor = vec3(
+                abs(N.x),
+                abs(N.y),
+                abs(N.z)
+            );
+    
+            // Combine lighting with rainbow color
+            vec3 color = uLe * (uKd * diffuse * rainbowColor + uKs * specular * vec3(1.0)) + ambient * rainbowColor;
+    
+            gl_FragColor = vec4(color, 1.0);
+        }
+    </script>
+</body>
+</html>

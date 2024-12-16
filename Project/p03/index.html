@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>p03</title>
+    <!-- External Scripts -->
+    <script src="../Common/webgl-utils.js"></script>
+    <script src="../Common/initShaders.js"></script>
+    <script src="../Common/MV.js"></script>
+    <script src="../OBJParser.js"></script>
+    <script src="source.js"></script>
+    
+    <!-- Stylesheet -->
+    <style>
+        /* Reset some default styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2em;
+            color: #444;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        fieldset {
+            width: 100%;
+            max-width: 600px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        legend {
+            padding: 0 10px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+        }
+
+        th {
+            background-color: #f7f7f7;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            appearance: none;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, input[type="range"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container span {
+            min-width: 40px;
+            text-align: right;
+            font-weight: bold;
+            color: #555;
+        }
+
+        @media (max-width: 600px) {
+            th, td {
+                padding: 8px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>part 3</h1>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+
+    <!-- Controls Fieldset -->
+    <fieldset>
+        <legend>Controls</legend>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Value</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Bouncing</td>
+                    <td><span id="bouncingValue">True</span></td>
+                    <td><button id="toggleBounce">Toggle</button></td>
+                </tr>
+                <tr>
+                    <td>Orbiting</td>
+                    <td><span id="orbitingValue">True</span></td>
+                    <td><button id="toggleOrbit">Toggle</button></td>
+                </tr>
+                <tr>
+                    <td>Viewpoint</td>
+                    <td colspan="2">
+                        <select name="viewPointSelect" id="viewPointSelect" aria-label="Select Viewpoint">
+                            <option value="0" selected>Static</option>
+                            <option value="1">Orbiting</option>
+                            <option value="2">Orbiting From Light Source</option>
+                        </select>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </fieldset>
+
+    <!-- Lighting Model Parameters Fieldset -->
+    <fieldset>
+        <legend>Lighting Model Parameters</legend>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                    <th>Control</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><label for="lightEmissionSlider">Emission</label></td>
+                    <td><span id="lightEmissionSliderValue">1.00</span></td>
+                    <td>
+                        <input type="range" id="lightEmissionSlider" min="0" max="2" value="1" step="0.01" aria-label="Emission Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="ambientKSlider">Ambient</label></td>
+                    <td><span id="ambientKSliderValue">0.50</span></td>
+                    <td>
+                        <input type="range" id="ambientKSlider" min="0" max="1" value="0.5" step="0.01" aria-label="Ambient Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="diffuseKSlider">Diffuse</label></td>
+                    <td><span id="diffuseKSliderValue">0.50</span></td>
+                    <td>
+                        <input type="range" id="diffuseKSlider" min="0" max="1" value="0.5" step="0.01" aria-label="Diffuse Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="specularKSlider">Specular</label></td>
+                    <td><span id="specularKSliderValue">0.50</span></td>
+                    <td>
+                        <input type="range" id="specularKSlider" min="0" max="1" value="0.5" step="0.01" aria-label="Specular Slider">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="shininessSlider">Shininess</label></td>
+                    <td><span id="shininessSliderValue">100</span></td>
+                    <td>
+                        <input type="range" id="shininessSlider" min="0" max="200" value="100" step="1" aria-label="Shininess Slider">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </fieldset>
+    <script id="vertex-shader-ground" type="x-shader/x-vertex">
+        uniform mat4 P;
+        uniform mat4 V;
+        uniform mat4 lightV;
+        uniform mat4 M;
+        
+        attribute vec4 vertexPosition;
+        attribute vec2 vertexTextureCoord;
+
+        varying vec4 fragmentNDC;
+        varying vec2 fragmentTextureCoord;
+
+        void main() {
+            fragmentTextureCoord = vertexTextureCoord;
+            fragmentNDC = P * lightV * M * vertexPosition;
+            gl_Position = P * V * M * vertexPosition;
+        }
+    </script>
+    
+    <script id="fragment-shader-ground" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform sampler2D textureMap;
+        uniform sampler2D shadowMap;
+
+        uniform int renderDepth;
+
+        varying vec4 fragmentNDC;
+        varying vec2 fragmentTextureCoord;
+
+        float unpackDepth(const in vec4 rgbaDepth) {
+            const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));
+            return dot(rgbaDepth, bitShift);
+        }
+
+        void main() {
+            if (renderDepth == 1) {
+                const vec4 bitShift = vec4(1.0, 256.0, 256.0*256.0, 256.0*256.0*256.0);
+                const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);
+                vec4 rgbaDepth = fract(gl_FragCoord.z*bitShift);
+                rgbaDepth -= rgbaDepth.gbaa*bitMask;
+                gl_FragColor = rgbaDepth;
+            } else {
+                vec3 shadowCoord = 0.5 * fragmentNDC.xyz / fragmentNDC.w + 0.5;
+
+                vec4 rgbaDepth = texture2D(shadowMap, shadowCoord.xy);
+                float depth = unpackDepth(rgbaDepth);
+                
+                vec4 color = texture2D(textureMap, fragmentTextureCoord);
+
+                if (shadowCoord.z > depth + 0.0015) {
+                    color.rgb *= 0.5;
+                }
+                color.a = 0.5;
+                gl_FragColor = color;
+            }
+        }
+    </script>
+    
+    <script id="vertex-shader-teapot" type="x-shader/x-vertex">
+        uniform float emissionL;
+        uniform float ambientK;
+        uniform float diffuseK;
+        uniform float specularK;
+        uniform float shininess;
+
+        uniform vec4 lightPosition;
+        
+        uniform mat4 P;
+        uniform mat4 V;
+        uniform mat4 lightV;
+        uniform mat4 M;
+        uniform mat4 R;
+
+        uniform int reflection;
+        
+        attribute vec4 vertexPosition;
+        attribute vec4 vertexColor;
+        attribute vec4 vertexNormal;
+
+        varying vec4 fragmentNDC;
+        varying vec4 fragmentColor;
+        varying vec3 fragmentNormal;
+
+        varying vec3 w_i;
+        varying vec3 w_o;
+        varying vec3 w_r;
+
+        void main() {
+
+            vec4 eyeSpacePosition = V * R * M * vertexPosition;
+            vec4 eyeSpaceLightPosition = V * R * lightPosition;
+            vec3 eyeSpaceNormal = mat3(V) * mat3(R) * vertexNormal.xyz;
+
+            w_i = eyeSpaceLightPosition.w == 0.0 ? normalize(-eyeSpaceLightPosition.xyz) : normalize(eyeSpaceLightPosition.xyz - eyeSpacePosition.xyz);
+            w_o = normalize(-eyeSpacePosition.xyz);
+            w_r = normalize(reflect(-w_i, eyeSpaceNormal.xyz));
+
+            fragmentNormal = eyeSpaceNormal.xyz;
+
+            fragmentNDC = P * lightV * M * vertexPosition;
+            fragmentColor = vertexColor;
+            
+            gl_Position = P * eyeSpacePosition;
+        }
+    </script>
+    
+    <script id="fragment-shader-teapot" type="x-shader/x-fragment">
+        precision highp float;
+
+        // Lighting Model Uniforms
+        uniform float emissionL;
+        uniform float ambientK;
+        uniform float diffuseK;
+        uniform float specularK;
+        uniform float shininess;
+
+        uniform int renderDepth;
+
+        uniform sampler2D shadowMap;
+
+        // Varying Variables from Vertex Shader
+        varying vec3 w_i;
+        varying vec3 fragmentNormal;
+        varying vec3 w_o;
+        varying vec3 w_r;
+
+        varying vec4 fragmentNDC;
+        varying vec4 fragmentColor;
+        
+        // Function to unpack depth from RGBA
+        float unpackDepth(const in vec4 rgbaDepth) {
+            const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));
+            return dot(rgbaDepth, bitShift);
+        }
+
+        void main() {
+            if (renderDepth == 1) {
+                // Render depth map
+                const vec4 bitShift = vec4(1.0, 256.0, 256.0*256.0, 256.0*256.0*256.0);
+                const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);
+                vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);
+                rgbaDepth -= rgbaDepth.gbaa * bitMask;
+                gl_FragColor = rgbaDepth;
+                return;
+            }
+
+            // Calculate light emission
+            vec3 lightEmission = vec3(1.0) * emissionL; // White light with variable intensity
+
+            // Normalize vectors
+            vec3 normal_n = normalize(fragmentNormal);
+            vec3 w_i_n = normalize(w_i);
+            vec3 w_o_n = normalize(w_o);
+            vec3 w_r_n = normalize(w_r);
+
+            // Diffuse component
+            float diff = max(dot(normal_n, w_i_n), 0.0);
+            vec3 diffuse = diffuseK * lightEmission * diff;
+
+            // Specular component
+            float spec = pow(max(dot(w_r_n, w_o_n), 0.0), shininess);
+            vec3 specular = specularK * lightEmission * spec;
+
+            // Ambient component
+            vec3 ambient = ambientK * lightEmission;
+
+            // Shadow calculation
+            vec3 shadowCoord = 0.5 * fragmentNDC.xyz / fragmentNDC.w + 0.5;
+            vec4 rgbaDepth = texture2D(shadowMap, shadowCoord.xy);
+            float depth = unpackDepth(rgbaDepth);
+
+            // Shadow bias
+            float bias = 0.005; // Adjust as needed
+
+            // Determine visibility based on shadow comparison
+            float visibility = 1.0;
+            if (shadowCoord.z > depth + bias) {
+                visibility = 0.5; // Objects in shadow receive reduced lighting
+            }
+
+            // Combine lighting components with visibility
+            vec3 lighting = (diffuse * visibility) + specular + ambient;
+
+            // Apply lighting to the fragment color
+            vec4 fc = fragmentColor;
+            fc.rgb *= lighting;
+
+            gl_FragColor = fc;
+        }
+    </script>
+</body>
+</html>

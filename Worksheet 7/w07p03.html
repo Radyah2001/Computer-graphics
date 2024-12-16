@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>w07p03</title>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="w07p03.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            margin: 2em;
+        }
+
+        canvas {
+            display: block;
+            margin: 1em auto;
+            border: 1px solid #ccc;
+            background-color: #fff;
+        }
+
+        button {
+            padding: 0.5em 1em;
+            font-size: 1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+    <!-- Vertex Shader -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        uniform mat4 P;
+        uniform mat4 V;
+
+        uniform mat4 MTex;
+
+        attribute vec4 position;
+        
+        varying vec4 fragmentPosition;
+        
+        void main() {
+            fragmentPosition = MTex * position;
+
+            gl_Position = P * V * position;
+        }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform bool reflective;
+        uniform vec4 eyePos;
+
+        uniform samplerCube textureMap;
+
+        varying vec4 vertexColor;
+        varying vec4 fragmentPosition;
+
+        void main() {
+            vec3 normal = normalize(fragmentPosition.xyz);
+
+            if (reflective) {
+                vec3 incident = eyePos.xyz - normal; // normal == pos on unit sphere
+                normal = reflect(incident, normal);
+            };
+
+            gl_FragColor = textureCube(textureMap, normal);
+        }
+    </script>
+    <button id="toggleOrbit">Toggle Orbit</button>
+    <button id="toggleReflective">Toggle Reflective Orb</button>
+</body>
+</html>

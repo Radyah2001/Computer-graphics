@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surface Normals and Smoothness in Triangle Mesh Rendering</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .note {
+            background-color: #e7f3fe;
+            border-left: 4px solid #2196F3;
+            padding: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Understanding Surface Normals and Surface Smoothness in Triangle Mesh Rendering</h1>
+
+    <h2>What are Surface Normals?</h2>
+    <p>
+        A <strong>surface normal</strong> is a vector that is perpendicular to a surface or a face of a 3D object. Normals are essential for lighting calculations in 3D graphics as they determine how light interacts with the surface.
+    </p>
+    <p>
+        In a triangle mesh, each triangle face can have a normal vector. These normals are used in the vertex and fragment shaders to compute how light reflects off the surface.
+    </p>
+
+    <h2>Obtaining Surface Normals</h2>
+    <p>
+        To compute the normal for a triangle with vertices v1, v2, and v3:
+    </p>
+    <pre><code>
+    vec3 edge1 = v2 - v1;
+    vec3 edge2 = v3 - v1;
+    vec3 normal = normalize(cross(edge1, edge2));
+    </code></pre>
+    <p>
+        This normal can be assigned to each vertex of the triangle for <em>flat shading</em> or averaged with adjacent triangles’ normals for <em>smooth shading</em>.
+    </p>
+
+    <h2>Flat vs. Smooth Shading</h2>
+    <p>
+        <strong>Flat shading</strong> uses a single normal per face. This leads to a faceted appearance, where each triangle is clearly visible.
+    </p>
+    <p>
+        <strong>Smooth shading</strong> averages the normals at each vertex shared by adjacent faces. This results in smoother transitions between faces, giving a more rounded appearance.
+    </p>
+
+    <div class="note">
+        <strong>Example:</strong> In WebGL, smooth shading can be achieved by specifying per-vertex normals, which are interpolated across the surface by the fragment shader.
+    </div>
+
+    <h2>Using Surface Normals in Shaders</h2>
+    <p>
+        In a typical WebGL vertex shader, you can pass normals to the fragment shader for lighting calculations:
+    </p>
+    <pre><code>
+    attribute vec4 a_Position;
+    attribute vec3 a_Normal;
+
+    uniform mat4 u_ModelViewMatrix;
+    uniform mat4 u_ProjectionMatrix;
+
+    varying vec3 v_Normal;
+
+    void main() {
+        gl_Position = u_ProjectionMatrix * u_ModelViewMatrix * a_Position;
+        v_Normal = mat3(u_ModelViewMatrix) * a_Normal;
+    }
+    </code></pre>
+
+    <p>In the fragment shader, use the normal for lighting:</p>
+    <pre><code>
+    precision mediump float;
+
+    varying vec3 v_Normal;
+    uniform vec3 u_LightDirection;
+
+    void main() {
+        vec3 normal = normalize(v_Normal);
+        float diffuse = max(dot(normal, -u_LightDirection), 0.0);
+        gl_FragColor = vec4(diffuse, diffuse, diffuse, 1.0);
+    }
+    </code></pre>
+
+    <h2>Conclusion</h2>
+    <p>
+        Surface normals are critical for achieving realistic lighting effects. By using smooth shading, you can create more visually appealing and less faceted models. In WebGL, this is done by specifying per-vertex normals and allowing the GPU to interpolate them for each fragment.
+    </p>
+</body>
+</html>

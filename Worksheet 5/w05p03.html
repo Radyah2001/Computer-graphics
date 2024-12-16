@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>w05p03</title>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="OBJParser.js"></script>
+</head>
+<body>
+    <canvas id="gl-canvas" width="512" height="512">
+        Your browser doesn't support the HTML5 canvas element.
+    </canvas>
+
+    <!-- Vertex Shader -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec4 aVertexPosition;
+        attribute vec4 aVertexColor;
+        attribute vec3 aVertexNormal;
+        
+        uniform mat4 uProjectionMatrix;
+        uniform mat4 uViewMatrix;
+        uniform mat4 uModelMatrix;
+        
+        varying vec4 vColor;
+        varying vec3 vNormal;
+        
+        void main() {
+            gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * aVertexPosition;
+            vColor = aVertexColor; // Pass the color to the fragment shader
+            vNormal = aVertexNormal;
+        }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec4 vColor;
+        varying vec3 vNormal;
+        
+        void main() {
+            gl_FragColor = vColor; // Use the interpolated color
+        }
+    </script>
+
+    <script type="text/javascript" src="w05p03.js"></script>
+</body>
+</html>
