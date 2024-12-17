@@ -66,7 +66,7 @@ window.onload = function init() {
     var colorsArray = [];
 
     // Create buffers to store vertices and colors
-    var vertexBuffer = gl.createBuffer();  // Changed from 'buffer' to 'vertexBuffer'
+    var vertexBuffer = gl.createBuffer();
     var colorBuffer = gl.createBuffer();
 
     // Get attribute locations

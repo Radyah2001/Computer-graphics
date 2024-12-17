@@ -137,7 +137,6 @@ function render(timeStamp) {
     gl.uniformMatrix4fv(groundProgram.lightV, false, flatten(lightV));
     gl.uniform1i(groundProgram.renderDepth, 0);
     gl.uniform1i(groundProgram.shadowMap, 1);
-    // gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0); // Uncomment if ground is visible
     
     // Draw teapot to screen
     gl.useProgram(teapotProgram);
@@ -268,56 +267,61 @@ function initGroundProgram() {
 }
 
 async function initTeapotProgram() {
-    teapotProgram = initShaders(gl, "vertex-shader-teapot", "fragment-shader-teapot");
-    gl.useProgram(teapotProgram);
+    try {
+        teapotProgram = initShaders(gl, "vertex-shader-teapot", "fragment-shader-teapot");
+        gl.useProgram(teapotProgram);
 
-    // attributes
-    teapotProgram.vertexBuffer = createBuffer(teapotProgram, "vertexPosition", 4, gl.FLOAT);
-    teapotProgram.colorBuffer = createBuffer(teapotProgram, "vertexColor", 4, gl.FLOAT);
-    teapotProgram.normalBuffer = createBuffer(teapotProgram, "vertexNormal", 4, gl.FLOAT);
-    
-    teapotProgram.indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotProgram.indexBuffer);
+        // Create and configure buffers for the teapot
+        teapotProgram.vertexBuffer = createBuffer(teapotProgram, "vertexPosition", 4, gl.FLOAT);
+        teapotProgram.colorBuffer = createBuffer(teapotProgram, "vertexColor", 4, gl.FLOAT);
+        teapotProgram.normalBuffer = createBuffer(teapotProgram, "vertexNormal", 4, gl.FLOAT);
+        
+        teapotProgram.indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotProgram.indexBuffer);
 
-    // uniforms
-    teapotProgram.P = gl.getUniformLocation(teapotProgram, "P");
-    gl.uniformMatrix4fv(teapotProgram.P, false, flatten(P));
+        // Set uniforms
+        teapotProgram.P = gl.getUniformLocation(teapotProgram, "P");
+        gl.uniformMatrix4fv(teapotProgram.P, false, flatten(P));
 
-    teapotProgram.V = gl.getUniformLocation(teapotProgram, "V");
-    teapotProgram.lightV = gl.getUniformLocation(teapotProgram, "lightV");
+        teapotProgram.V = gl.getUniformLocation(teapotProgram, "V");
+        teapotProgram.lightV = gl.getUniformLocation(teapotProgram, "lightV");
 
-    teapotProgram.M = gl.getUniformLocation(teapotProgram, "M");
-    gl.uniformMatrix4fv(teapotProgram.M, false, flatten(I));
+        teapotProgram.M = gl.getUniformLocation(teapotProgram, "M");
+        gl.uniformMatrix4fv(teapotProgram.M, false, flatten(I));
 
-    teapotProgram.R = gl.getUniformLocation(teapotProgram, "R");
+        teapotProgram.R = gl.getUniformLocation(teapotProgram, "R");
 
-    teapotProgram.emissionL = gl.getUniformLocation(teapotProgram, "emissionL");
-    gl.uniform1f(teapotProgram.emissionL, 1.0);
+        teapotProgram.emissionL = gl.getUniformLocation(teapotProgram, "emissionL");
+        gl.uniform1f(teapotProgram.emissionL, 1.0);
 
-    teapotProgram.ambientK = gl.getUniformLocation(teapotProgram, "ambientK");
-    gl.uniform1f(teapotProgram.ambientK, 0.5);
-    
-    teapotProgram.diffuseK = gl.getUniformLocation(teapotProgram, "diffuseK");
-    gl.uniform1f(teapotProgram.diffuseK, 0.5);
-    
-    teapotProgram.specularK = gl.getUniformLocation(teapotProgram, "specularK");
-    gl.uniform1f(teapotProgram.specularK, 0.5);
-    
-    teapotProgram.shininess = gl.getUniformLocation(teapotProgram, "shininess");
-    gl.uniform1f(teapotProgram.shininess, 100.0);
+        teapotProgram.ambientK = gl.getUniformLocation(teapotProgram, "ambientK");
+        gl.uniform1f(teapotProgram.ambientK, 0.5);
+        
+        teapotProgram.diffuseK = gl.getUniformLocation(teapotProgram, "diffuseK");
+        gl.uniform1f(teapotProgram.diffuseK, 0.5);
+        
+        teapotProgram.specularK = gl.getUniformLocation(teapotProgram, "specularK");
+        gl.uniform1f(teapotProgram.specularK, 0.5);
+        
+        teapotProgram.shininess = gl.getUniformLocation(teapotProgram, "shininess");
+        gl.uniform1f(teapotProgram.shininess, 100.0);
 
-    teapotProgram.lightPosition = gl.getUniformLocation(teapotProgram, "lightPosition");
-    teapotProgram.renderDepth = gl.getUniformLocation(teapotProgram, "renderDepth");
-    teapotProgram.shadowMap = gl.getUniformLocation(teapotProgram, "shadowMap");
+        teapotProgram.lightPosition = gl.getUniformLocation(teapotProgram, "lightPosition");
+        teapotProgram.renderDepth = gl.getUniformLocation(teapotProgram, "renderDepth");
+        teapotProgram.shadowMap = gl.getUniformLocation(teapotProgram, "shadowMap");
 
-    // Load the teapot model
-    console.log("Loading teapot model...");
-    drawingInfo = await readOBJFile("../teapot.obj", 0.25, false);
-    if (!drawingInfo) {
-        console.error("Failed to load teapot model");
-        return false;
+        // Load the teapot model
+        console.log("Loading teapot model...");
+        drawingInfo = await readOBJFile("../teapot.obj", 0.25, false);
+        if (!drawingInfo) {
+            console.error("Failed to load teapot model");
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error("Error initializing teapot program:", error);
+        return false;  
     }
-    return true;
 }
 
 function initFramebuffer() {

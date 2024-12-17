@@ -90,9 +90,6 @@ function setUpAttribute(data, attribute, size, divisor=0, mode=gl.STATIC_DRAW) {
     gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(loc);
 
-    // For instancing (if needed), divisor can be used
-    // instancedArrays.vertexAttribDivisorANGLE(loc, divisor);
-
     buffer.loc = loc;
     return buffer;
 }
@@ -238,10 +235,6 @@ function initAttributes() {
 function initEventListeners() {
     document.getElementById("toggleOrbit").addEventListener("click", () => {
         orbiting = !orbiting;
-    });
-
-    document.getElementById("toggleReflective").addEventListener("click", () => {
-        reflectiveMask = !reflectiveMask;
     });
 }
 

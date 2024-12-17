@@ -333,7 +333,7 @@
     </script>
     
     <script id="vertex-shader-teapot" type="x-shader/x-vertex">
-        // **Uniforms**
+        // Uniforms
         uniform float emissionL;       // Emission intensity
         uniform float ambientK;        // Ambient reflection coefficient
         uniform float diffuseK;        // Diffuse reflection coefficient
@@ -350,12 +350,12 @@
     
         uniform int reflection;        // Flag to determine if reflection is active
         
-        // **Attributes**
+        // Attributes
         attribute vec4 vertexPosition; // Vertex position in model space
         attribute vec4 vertexColor;    // Vertex color
         attribute vec4 vertexNormal;   // Vertex normal
     
-        // **Varyings**
+        // Varyings
         varying vec4 fragmentNDC;          // Fragment position in Normalized Device Coordinates for shadow mapping
         varying vec4 fragmentColor;        // Interpolated vertex color passed to the fragment shader
         varying vec3 fragmentNormal;       // Transformed normal vector passed to the fragment shader
@@ -365,18 +365,18 @@
         varying vec3 w_r;    // Reflection vector
     
         void main() {
-            // **Transform Vertex Position to Eye Space**
+            // Transform Vertex Position to Eye Space
             vec4 eyeSpacePosition = V * R * M * vertexPosition;
             
-            // **Transform Light Position to Eye Space**
+            // Transform Light Position to Eye Space
             vec4 eyeSpaceLightPosition = V * R * lightPosition;
             
-            // **Transform and Normalize the Normal Vector**
+            // Transform and Normalize the Normal Vector
             // Note: Using mat3(V) * mat3(R) * vertexNormal.xyz is a simplistic approach.
             // For accurate normal transformation, consider using the inverse transpose of the model-view matrix.
             vec3 eyeSpaceNormal = mat3(V) * mat3(R) * vertexNormal.xyz;
     
-            // **Calculate Lighting Vectors**
+            // Calculate Lighting Vectors
             // Determine if the light is directional or positional based on the w component
             // If w == 0.0, it's a directional light; otherwise, it's a positional light
             w_i = eyeSpaceLightPosition.w == 0.0 
@@ -389,16 +389,16 @@
             // Reflection vector is the reflection of the incoming light vector around the normal
             w_r = normalize(reflect(-w_i, eyeSpaceNormal.xyz));
     
-            // **Pass the Transformed Normal to the Fragment Shader**
+            // Pass the Transformed Normal to the Fragment Shader
             fragmentNormal = eyeSpaceNormal.xyz;
     
-            // **Calculate Fragment Position in NDC for Shadow Mapping**
+            // Calculate Fragment Position in NDC for Shadow Mapping
             fragmentNDC = P * lightV * M * vertexPosition;
             
-            // **Pass Vertex Color to the Fragment Shader**
+            // Pass Vertex Color to the Fragment Shader
             fragmentColor = vertexColor;
             
-            // **Set the Final Position of the Vertex in Clip Space**
+            // Set the Final Position of the Vertex in Clip Space
             gl_Position = P * eyeSpacePosition;
         }
     </script>
@@ -406,7 +406,7 @@
     <script id="fragment-shader-teapot" type="x-shader/x-fragment">
         precision highp float;  // Set the default precision to high for floating-point operations
 
-        // **Lighting Model Uniforms**
+        // Lighting Model Uniforms
         uniform float emissionL;    // Emission intensity: controls the brightness of emitted light
         uniform float ambientK;     // Ambient reflection coefficient: controls the ambient light contribution
         uniform float diffuseK;     // Diffuse reflection coefficient: controls the diffuse light contribution
@@ -417,7 +417,7 @@
         
         uniform sampler2D shadowMap; // Shadow map texture: contains depth information from the light's perspective
         
-        // **Varying Variables from Vertex Shader**
+        // Varying Variables from Vertex Shader
         varying vec3 w_i;             // Incoming light vector: direction from the fragment to the light source
         varying vec3 fragmentNormal;  // Transformed normal vector at the fragment
         varying vec3 w_o;             // Outgoing view vector: direction from the fragment to the camera
@@ -426,7 +426,7 @@
         varying vec4 fragmentNDC;     // Fragment position in Normalized Device Coordinates (NDC) for shadow mapping
         varying vec4 fragmentColor;   // Interpolated vertex color passed from the vertex shader
         
-        // **Function to Unpack Depth from RGBA**
+        // Function to Unpack Depth from RGBA
         // Converts the RGBA-encoded depth value back into a single floating-point depth value
         float unpackDepth(const in vec4 rgbaDepth) {
             // Each component of rgbaDepth represents a part of the depth value
@@ -435,7 +435,7 @@
         }
         
         void main() {
-            // **Depth Rendering Pass**
+            // Depth Rendering Pass
             // If renderDepth is set to 1, the shader outputs the depth value for shadow mapping
             if (renderDepth == 1) {
                 // Encode the fragment's depth into RGBA channels
@@ -453,62 +453,62 @@
                 return; // Exit the shader as depth rendering is complete
             }
         
-            // **Color Rendering Pass**
+            // Color Rendering Pass
             // If renderDepth is not set, perform lighting and shadow calculations
             
-            // **Calculate Light Emission**
+            // Calculate Light Emission
             // Define the color and intensity of the light source
             vec3 lightEmission = vec3(1.0) * emissionL; // White light scaled by emissionL
             
-            // **Normalize Vectors**
+            // Normalize Vectors
             // Ensure all direction vectors are unit vectors for accurate lighting calculations
             vec3 normal_n = normalize(fragmentNormal); // Normal vector at the fragment
             vec3 w_i_n = normalize(w_i);              // Incoming light direction
             vec3 w_o_n = normalize(w_o);              // Outgoing view (camera) direction
             vec3 w_r_n = normalize(w_r);              // Reflection direction
             
-            // **Diffuse Lighting Component**
+            // Diffuse Lighting Component
             // Calculate the diffuse light based on the angle between the light and the normal
             float diff = max(dot(normal_n, w_i_n), 0.0); // Lambertian reflectance
             vec3 diffuse = diffuseK * lightEmission * diff;
             
-            // **Specular Lighting Component**
+            // Specular Lighting Component
             // Calculate the specular highlight based on the reflection vector and view direction
             float spec = pow(max(dot(w_r_n, w_o_n), 0.0), shininess); // Blinn-Phong specular
             vec3 specular = specularK * lightEmission * spec;
             
-            // **Ambient Lighting Component**
+            // Ambient Lighting Component
             // Add a base level of light that affects all objects equally
             vec3 ambient = ambientK * lightEmission;
             
-            // **Shadow Calculation**
+            // Shadow Calculation
             // Determine if the fragment is in shadow by comparing its depth with the shadow map
             vec3 shadowCoord = 0.5 * fragmentNDC.xyz / fragmentNDC.w + 0.5; // Transform to [0,1] range
             vec4 rgbaDepth = texture2D(shadowMap, shadowCoord.xy);            // Sample the shadow map
             float depth = unpackDepth(rgbaDepth);                             // Unpack the sampled depth
             
-            // **Shadow Bias**
+            // Shadow Bias
             // A small bias to prevent shadow acne (self-shadowing artifacts)
             float bias = 0.005; // Adjust this value based on visual results
             
-            // **Determine Visibility Based on Shadow Comparison**
+            // Determine Visibility Based on Shadow Comparison
             // If the fragment's depth is greater than the shadow map depth plus bias, it's in shadow
             float visibility = 1.0; // Fully lit by default
             if (shadowCoord.z > depth + bias) {
                 visibility = 0.5; // Reduced lighting if in shadow
             }
             
-            // **Combine Lighting Components with Visibility**
+            // Combine Lighting Components with Visibility
             // Apply visibility to the diffuse component to simulate shadows
             // Specular and ambient components remain unaffected for realism
             vec3 lighting = (diffuse * visibility) + specular + ambient;
             
-            // **Apply Lighting to the Fragment Color**
+            // Apply Lighting to the Fragment Color
             // Modulate the interpolated vertex color with the calculated lighting
             vec4 fc = fragmentColor;
             fc.rgb *= lighting;
             
-            // **Output the Final Color**
+            // Output the Final Color
             gl_FragColor = fc;
         }
     </script>

@@ -88,9 +88,6 @@ function setUpAttribute(data, attribute, size, divisor=0, mode=gl.STATIC_DRAW) {
     gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(loc);
 
-    // If needed for instancing, divisor can be set here. Currently not used.
-    //instancedArrays.vertexAttribDivisorANGLE(loc, divisor);
-
     buffer.loc = loc;
     return buffer;
 }
